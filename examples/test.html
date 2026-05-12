@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My PL Plugin - Test Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+            animation: slideDown 0.6s ease;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.6s ease 0.2s both;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .results {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.6s ease 0.4s both;
+        }
+
+        .results h2 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.3em;
+        }
+
+        .result-item {
+            background: #f5f5f5;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .result-item:hover {
+            background: #efefef;
+            transform: translateX(5px);
+        }
+
+        .result-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .result-meta {
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .result-source {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+
+        .quality-selector {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .quality-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .quality-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 12px;
+            border: 2px solid #ddd;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .quality-btn:hover {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .stats {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            animation: slideUp 0.6s ease 0.6s both;
+        }
+
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .stat-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .stat-value {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 4px solid #c33;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3c3;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📺 My PL Plugin</h1>
+            <p class="subtitle">Multi-source Lampa Streaming</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="searchInput">Пошук фільму / серіалу:</label>
+                <input type="text" id="searchInput" placeholder="Введіть назву..." value="The Matrix">
+            </div>
+
+            <div class="control-group">
+                <label for="langSelect">Мова:</label>
+                <select id="langSelect">
+                    <option value="uk">🇺🇦 Українська</option>
+                    <option value="ru">🇷🇺 Російська</option>
+                    <option value="en">🇬🇧 English</option>
+                </select>
+            </div>
+
+            <button onclick="performSearch()">🔍 Пошук</button>
+            <button onclick="clearCache()" style="background: #ff6b6b;">🗑️ Очистити кеш</button>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <div class="results">
+            <h2>Результати пошуку</h2>
+            <div id="resultsList"></div>
+        </div>
+
+        <div class="stats">
+            <h2>Статистика</h2>
+            <div class="stat-item">
+                <span class="stat-label">Джерел:</span>
+                <span class="stat-value" id="sourcesCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Мов:</span>
+                <span class="stat-value" id="langsCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Кешовано запитів:</span>
+                <span class="stat-value" id="cacheCount">0</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Версія плагіну:</span>
+                <span class="stat-value" id="pluginVersion">-</span>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Made with ❤️ by rebik111</p>
+        </div>
+    </div>
+
+    <script src="../my-pl.js"></script>
+    <script>
+        // Load plugin and initialize UI
+        window.addEventListener('load', () => {
+            if (window.MyPLPlugin) {
+                updateStats();
+                document.getElementById('langSelect').value = window.MyPLPlugin.lang;
+            }
+        });
+
+        // Search functionality
+        async function performSearch() {
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (!query) {
+                showMessage('Введіть назву для пошуку', 'error');
+                return;
+            }
+
+            const resultsList = document.getElementById('resultsList');
+            resultsList.innerHTML = '<div class="loading"></div> Пошук...';
+
+            try {
+                const results = await window.MyPLPlugin.search(query);
+                displayResults(results);
+                showMessage(`Знайдено ${results.length} результатів`, 'success');
+            } catch (error) {
+                showMessage(`Помилка: ${error.message}`, 'error');
+                resultsList.innerHTML = '';
+            }
+
+            updateStats();
+        }
+
+        // Display search results
+        function displayResults(results) {
+            const resultsList = document.getElementById('resultsList');
+            
+            if (results.length === 0) {
+                resultsList.innerHTML = '<p>Результатів не знайдено</p>';
+                return;
+            }
+
+            resultsList.innerHTML = results.map((item, index) => `
+                <div class="result-item">
+                    <div class="result-title">
+                        ${item.title}
+                        <span class="result-source">${item.source}</span>
+                    </div>
+                    <div class="result-meta">
+                        ${item.year ? 'Рік: ' + item.year : ''}
+                    </div>
+                    <div class="quality-selector">
+                        <label>Якість:</label>
+                        <div class="quality-buttons" id="qualities-${index}"></div>
+                        <button onclick="loadQualities(${index}, '${item.id}')" style="margin-top: 10px; width: 100%;">Завантажити якості</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load and display qualities
+        async function loadQualities(index, itemId) {
+            const results = await window.MyPLPlugin.search(document.getElementById('searchInput').value);
+            const item = results.find(r => r.id === itemId);
+            
+            if (!item) return;
+
+            const details = await window.MyPLPlugin.getDetails(item.id, item.data);
+            const qualitiesContainer = document.getElementById(`qualities-${index}`);
+            
+            qualitiesContainer.innerHTML = Object.entries(details.qualities).map(([quality, url]) => `
+                <button class="quality-btn" onclick="playVideo('${url}', '${quality}')">
+                    ${quality}
+                </button>
+            `).join('');
+        }
+
+        // Play video with quality
+        function playVideo(url, quality) {
+            window.MyPLPlugin.playWithQuality(url, quality);
+            showMessage(`▶️ Відтворення: ${quality}`, 'success');
+        }
+
+        // Clear cache
+        function clearCache() {
+            window.MyPLPlugin.clearCache();
+            showMessage('Кеш очищено', 'success');
+            updateStats();
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const container = document.getElementById('messageContainer');
+            container.innerHTML = `<div class="${type}">${text}</div>`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    container.innerHTML = '';
+                }, 3000);
+            }
+        }
+
+        // Update statistics
+        function updateStats() {
+            const plugin = window.MyPLPlugin;
+            
+            if (!plugin) return;
+
+            document.getElementById('sourcesCount').textContent = plugin.getAvailableSources().length;
+            document.getElementById('langsCount').textContent = plugin.getAvailableLangs().length;
+            document.getElementById('cacheCount').textContent = plugin.getCacheStats().itemsCount;
+            document.getElementById('pluginVersion').textContent = plugin.version;
+        }
+
+        // Language change
+        document.getElementById('langSelect').addEventListener('change', (e) => {
+            window.MyPLPlugin.setLang(e.target.value);
+            showMessage('Мова змінена', 'success');
+        });
+
+        // Search on Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>

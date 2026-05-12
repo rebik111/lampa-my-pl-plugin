@@ -1,0 +1,44 @@
+{
+  "name": "lampa-my-pl-plugin",
+  "version": "1.0.0",
+  "description": "Multi-source streaming plugin for Lampa Media Station X with quality selection and multi-language support",
+  "main": "my-pl.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "lampa",
+    "plugin",
+    "streaming",
+    "uafix",
+    "fanfilm4k",
+    "anwap",
+    "media",
+    "player"
+  ],
+  "author": "rebik111",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rebik111/lampa-my-pl-plugin.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rebik111/lampa-my-pl-plugin/issues"
+  },
+  "homepage": "https://github.com/rebik111/lampa-my-pl-plugin#readme",
+  "lampa": {
+    "id": "my-pl",
+    "icon": "📺",
+    "name": "My PL",
+    "sources": [
+      "UAFix",
+      "FanFilm4K",
+      "ANWAP"
+    ],
+    "languages": [
+      "uk",
+      "ru",
+      "en"
+    ]
+  }
+}
