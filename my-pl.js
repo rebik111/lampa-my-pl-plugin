@@ -1,17 +1,14 @@
 /**
  * My PL - Universal Lampa Streaming Plugin
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: rebik111
  * License: MIT
  * 
  * Multi-source plugin for Lampa Media Station X
  * Sources: UAFix, FanFilm4K, ANWAP
- * Features:
- * - Multi-language support (UK, RU, EN)
- * - Full component registration
- * - Search interface
- * - Quality selection
- * - Smart caching
+ * 
+ * Installation:
+ * https://raw.githubusercontent.com/rebik111/lampa-my-pl-plugin/main/bo-my-pl.js
  */
 
 (function() {
@@ -20,13 +17,15 @@
     // ========== CONFIGURATION ==========
     const PLUGIN_ID = 'my-pl';
     const PLUGIN_NAME = 'My PL';
-    const PLUGIN_VERSION = '2.0.0';
+    const PLUGIN_VERSION = '2.1.0';
+    const PLUGIN_DESCRIPTION = 'Мультиджерельний потік';
     const CACHE_TIMEOUT = 60 * 60 * 1000; // 1 час
 
     // Multi-language translations
     const i18n = {
         uk: {
             name: 'My PL',
+            desc: 'Мультиджерельний потік',
             search: 'Пошук',
             play: 'Відтворити',
             quality: 'Якість',
@@ -46,6 +45,7 @@
         },
         ru: {
             name: 'My PL',
+            desc: 'Многоисточниковый поток',
             search: 'Поиск',
             play: 'Воспроизведение',
             quality: 'Качество',
@@ -65,6 +65,7 @@
         },
         en: {
             name: 'My PL',
+            desc: 'Multi-source streaming',
             search: 'Search',
             play: 'Play',
             quality: 'Quality',
@@ -91,24 +92,21 @@
             name: 'UAFix',
             url: 'https://uafix.net',
             api: '/api/v1',
-            searchEndpoint: '/search',
-            detailsEndpoint: '/movie'
+            searchEndpoint: '/search'
         },
         {
             id: 'fanfilm4k',
             name: 'FanFilm4K',
             url: 'https://v12.fanfilm4k.media',
             api: '/api',
-            searchEndpoint: '/search',
-            detailsEndpoint: '/item'
+            searchEndpoint: '/search'
         },
         {
             id: 'anwap',
             name: 'ANWAP',
             url: 'https://mm.anwap.love',
             api: '/api/v2',
-            searchEndpoint: '/search',
-            detailsEndpoint: '/details'
+            searchEndpoint: '/search'
         }
     ];
 
@@ -125,12 +123,10 @@
 
         get: function(key) {
             if (!this.storage[key]) return null;
-            
             if (Date.now() > this.storage[key].expires) {
                 delete this.storage[key];
                 return null;
             }
-            
             return this.storage[key].value;
         },
 
@@ -324,7 +320,9 @@
 
         playWithQuality: function(url, quality) {
             if (!url) {
-                Lampa.Noty.show(this.getLang('noQuality'));
+                if (window.Lampa && window.Lampa.Noty) {
+                    Lampa.Noty.show(this.getLang('noQuality'));
+                }
                 return;
             }
 
@@ -351,7 +349,6 @@
         let currentResults = [];
 
         this.create = function() {
-            // Show search input
             Lampa.Input.edit({
                 free: true,
                 nosave: true,
@@ -460,7 +457,6 @@
 
             scroll.append(html);
             
-            // Show quality selection
             setTimeout(() => _this.selectQuality(), 500);
             
             return scroll.render();
@@ -471,7 +467,9 @@
             const qualities = details.qualities;
 
             if (!qualities || Object.keys(qualities).length === 0) {
-                Lampa.Noty.show(MyPLPlugin.getLang('noQuality'));
+                if (window.Lampa && window.Lampa.Noty) {
+                    Lampa.Noty.show(MyPLPlugin.getLang('noQuality'));
+                }
                 return;
             }
 
@@ -501,7 +499,7 @@
 
     // ========== PLUGIN INITIALIZATION ==========
     function startPlugin() {
-        console.log(`[My PL] Starting v${PLUGIN_VERSION}...`);
+        console.log(`[My PL] v${PLUGIN_VERSION} initializing...`);
 
         // Register components
         if (window.Lampa && window.Lampa.Component) {
@@ -510,9 +508,9 @@
             console.log('[My PL] Components registered');
         }
 
-        // Add menu button
+        // Add menu button with subtitle
         if (window.Lampa && window.Lampa.Menu) {
-            Lampa.Menu.addButton('📺', MyPLPlugin.getLang('name'), function() {
+            const button = Lampa.Menu.addButton('📺', MyPLPlugin.getLang('name'), function() {
                 Lampa.Activity.push({
                     url: '',
                     title: MyPLPlugin.getLang('name'),
@@ -521,13 +519,19 @@
                     page: 1
                 });
             });
+            
+            // Add subtitle/description
+            if (button && button.length) {
+                button.attr('data-subtitle', MyPLPlugin.getLang('desc'));
+            }
+            
             console.log('[My PL] Menu button added');
         }
 
         // Export globally
         window.MyPLPlugin = MyPLPlugin;
 
-        console.log('%c✅ My PL Plugin Ready', 'color: #667eea; font-size: 14px; font-weight: bold;');
+        console.log('%c✅ My PL Plugin Ready v' + PLUGIN_VERSION, 'color: #667eea; font-size: 14px; font-weight: bold;');
     }
 
     // Wait for Lampa to be ready
