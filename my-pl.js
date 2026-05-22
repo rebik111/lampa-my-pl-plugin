@@ -1,6 +1,6 @@
 /**
  * My PL - Universal Lampa Streaming Plugin
- * Version: 1.0.0
+ * Version: 1.0.1
  * Author: rebik111
  * License: MIT
  * 
@@ -20,7 +20,7 @@
     // ========== CONFIGURATION ==========
     const PLUGIN_ID = 'my-pl';
     const PLUGIN_NAME = 'My PL';
-    const PLUGIN_VERSION = '1.0.0';
+    const PLUGIN_VERSION = '1.0.1';
     const CACHE_TIMEOUT = 60 * 60 * 1000; // 1 hour
 
     // Multi-language translations
@@ -143,7 +143,8 @@
             const timeout = options.timeout || 10000;
             const headers = {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'application/json',
+                'Accept': 'application/json, text/plain, */*',
+                'X-Requested-With': 'XMLHttpRequest',
                 ...options.headers
             };
 
@@ -156,7 +157,8 @@
                     headers: headers,
                     signal: controller.signal,
                     mode: 'cors',
-                    credentials: 'omit'
+                    credentials: 'omit',
+                    cache: 'no-cache'
                 });
 
                 clearTimeout(timeoutId);
@@ -259,40 +261,93 @@
         name: PLUGIN_NAME,
         version: PLUGIN_VERSION,
         lang: localStorage.getItem('my-pl-lang') || 'uk',
+        initialized: false,
 
         init: function() {
+            if (this.initialized) return;
+            this.initialized = true;
+            
             console.log(`[${PLUGIN_NAME}] Initializing v${PLUGIN_VERSION}...`);
-            this.registerButton();
-            this.attachMenuListener();
+            
+            // Wait for Lampa to be ready
+            if (window.Lampa) {
+                this.setupLampaIntegration();
+            } else {
+                setTimeout(() => this.init(), 500);
+                return;
+            }
+            
             console.log(`[${PLUGIN_NAME}] Ready!`);
         },
 
-        registerButton: function() {
-            if (window.Lampa && window.Lampa.Template) {
-                // Register custom button in Lampa menu
-                const buttonHTML = `
-                    <div class="my-pl-button" style="
-                        padding: 10px 20px;
+        setupLampaIntegration: function() {
+            // Add to Lampa menu
+            if (window.Lampa.Template && window.Lampa.Template.add) {
+                this.createMenuButton();
+            }
+            
+            // Register as Lampa extension if available
+            if (window.Lampa.Extension) {
+                try {
+                    window.Lampa.Extension.add({
+                        id: PLUGIN_ID,
+                        name: PLUGIN_NAME,
+                        description: 'Multi-source streaming with quality selection',
+                        icon: '📺',
+                        init: () => this.handleMenuClick()
+                    });
+                } catch (e) {
+                    console.log('[My PL] Extension registration not available:', e.message);
+                }
+            }
+        },
+
+        createMenuButton: function() {
+            try {
+                // Try to add button to main menu
+                const menuItems = document.querySelectorAll('[class*="menu"], [class*="navigation"]');
+                
+                if (menuItems.length > 0) {
+                    const button = document.createElement('div');
+                    button.className = 'my-pl-menu-button';
+                    button.innerHTML = `📺 ${this.getLang('name')}`;
+                    button.style.cssText = `
+                        padding: 12px 20px;
                         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                         color: white;
                         border-radius: 5px;
                         cursor: pointer;
                         font-weight: bold;
                         transition: all 0.3s ease;
-                    ">
-                        📺 ${this.getLang('name')}
-                    </div>
-                `;
-                console.log('[My PL] Button registered');
+                        margin: 5px;
+                        display: inline-block;
+                    `;
+                    
+                    button.addEventListener('mouseenter', function() {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.4)';
+                    });
+                    
+                    button.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = 'none';
+                    });
+                    
+                    button.addEventListener('click', () => this.handleMenuClick());
+                    
+                    // Append to body or menu container
+                    document.body.appendChild(button);
+                }
+            } catch (e) {
+                console.log('[My PL] Menu button creation error:', e.message);
             }
         },
 
-        attachMenuListener: function() {
-            if (window.addEventListener) {
-                window.addEventListener('my-pl-search', (e) => {
-                    this.search(e.detail.query);
-                });
-            }
+        handleMenuClick: function() {
+            console.log('[My PL] Menu clicked');
+            // Dispatch custom event for search
+            const event = new CustomEvent('my-pl-menu-click', { detail: { action: 'search' } });
+            window.dispatchEvent(event);
         },
 
         getLang: function(key) {
@@ -303,6 +358,7 @@
             if (i18n[lang]) {
                 this.lang = lang;
                 localStorage.setItem('my-pl-lang', lang);
+                console.log(`[My PL] Language changed to: ${lang}`);
             }
         },
 
@@ -322,14 +378,16 @@
             console.log('[My PL] Searching for:', query);
             const results = [];
 
-            for (let source of SOURCES) {
-                try {
-                    const sourceResults = await this.searchSource(source, query);
-                    results.push(...sourceResults);
-                } catch (error) {
+            // Search all sources in parallel
+            const searchPromises = SOURCES.map(source => 
+                this.searchSource(source, query).catch(error => {
                     console.warn(`[My PL] Error searching ${source.name}:`, error.message);
-                }
-            }
+                    return [];
+                })
+            );
+
+            const sourceResults = await Promise.all(searchPromises);
+            sourceResults.forEach(items => results.push(...items));
 
             Cache.set(cacheKey, results);
             console.log(`[My PL] Found ${results.length} results`);
@@ -348,7 +406,7 @@
                 // Normalize results
                 let items = Array.isArray(parsed) ? parsed : parsed.results || parsed.items || parsed.data || [];
 
-                return items.map((item, index) => ({
+                return items.slice(0, 10).map((item, index) => ({
                     id: `${source.id}_${index}`,
                     source: source.name,
                     sourceId: source.id,
@@ -381,7 +439,7 @@
                 poster: itemData.poster || itemData.image || '',
                 year: itemData.year || '',
                 url: url || '',
-                qualities: qualities || { 'auto': url }
+                qualities: Object.keys(qualities).length > 0 ? qualities : { 'auto': url }
             };
 
             Cache.set(cacheKey, details);
@@ -435,34 +493,24 @@
         }
     };
 
-    // ========== REGISTRATION & EXPORT ==========
-    if (window.Lampa) {
-        // Register with Lampa if available
-        if (typeof window.Lampa.Plugin !== 'undefined') {
-            window.Lampa.Plugin.make({
-                id: PLUGIN_ID,
-                name: PLUGIN_NAME,
-                description: 'Multi-source streaming with quality selection',
-                version: PLUGIN_VERSION,
-                icon: '📺',
-                run: function() {
-                    MyPLPlugin.init();
-                }
-            });
-        }
+    // ========== INITIALIZATION ==========
+    
+    // Initialize when document is ready
+    function initPlugin() {
+        MyPLPlugin.init();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPlugin);
+    } else {
+        initPlugin();
     }
 
     // Export globally
     window.MyPLPlugin = MyPLPlugin;
 
-    // Initialize
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => MyPLPlugin.init());
-    } else {
-        MyPLPlugin.init();
-    }
-
     console.log('%cMy PL Plugin Loaded', 'color: #667eea; font-size: 14px; font-weight: bold;');
     console.log('%cVersion: ' + PLUGIN_VERSION, 'color: #667eea; font-size: 12px;');
     console.log('%cUse: window.MyPLPlugin', 'color: #667eea; font-size: 12px;');
+
 })();
